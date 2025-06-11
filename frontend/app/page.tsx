@@ -166,7 +166,7 @@ export default function Home() {
 
       {/* Area Input */}
       <div className="fixed bottom-0 left-0 right-0  pt-4">
-        <div className="max-w-3xl mx-auto px-4">
+        <div className="max-w-3xl mx-auto px-4 bg-background">
           <InputArea
             selectedImage={selectedImage}
             setSelectedImage={setSelectedImage}
