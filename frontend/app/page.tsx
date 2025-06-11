@@ -150,13 +150,13 @@ export default function Home() {
           )}
           {loading && (
             <div className="flex gap-2 items-center text-gray-500 animate-pulse">
-              <div className="w-2 h-2  rounded-full animate-bounce" />
+              <div className="w-2 h-2  bg-primary rounded-full animate-bounce" />
               <div
-                className="w-2 h-2  rounded-full animate-bounce"
+                className="w-2 h-2  bg-primary rounded-full animate-bounce"
                 style={{ animationDelay: "150ms" }}
               />
               <div
-                className="w-2 h-2  rounded-full animate-bounce"
+                className="w-2 h-2  bg-primary rounded-full animate-bounce"
                 style={{ animationDelay: "300ms" }}
               />
             </div>
