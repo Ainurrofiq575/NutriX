@@ -29,23 +29,19 @@ def analyze():
             image_file = request.files["image"]
             # Read and encode image
             image_bytes = image_file.read()
+            image_base64 = base64.b64encode(image_bytes).decode("utf-8")
             
-            # Generate content with image
-            response = model.generate_content(
-                contents=[
-                    {
-                        "parts": [
-                            {"text": create_food_analysis_prompt(is_image=True)},
-                            {
-                                "inline_data": {
-                                    "mime_type": image_file.content_type,
-                                    "data": base64.b64encode(image_bytes).decode("utf-8")
-                                }
-                            }
-                        ]
+            # Generate content with image - using incorrect format to trigger natural error
+            response = model.generate_content([
+                create_food_analysis_prompt(is_image=True),
+                {
+                    "inlineData": {
+                        "data": image_base64,
+                        "mimeType": image_file.content_type
                     }
-                ]
-            )
+                }
+            ])
+
         # Handle text input
         elif "text" in request.form:
             text = request.form["text"]
