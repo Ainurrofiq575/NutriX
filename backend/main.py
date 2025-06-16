@@ -1,74 +1,71 @@
-import os
 import base64
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import google.generativeai as genai
-from dotenv import load_dotenv
-from prompt import create_food_analysis_prompt
-
-# Load environment variables
-load_dotenv()
+from model.prompts import create_food_analysis_prompt
+from model.gemini.main import analyze_with_gemini
+from model.nutrix.main import analyze_with_nutrix
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
-# Configure Google Gemini AI
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY is not configured")
-
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.0-flash")
-
 @app.route("/api/analyze", methods=["POST"])
 def analyze():
     try:
+        # Get model type from request
+        model_type = request.form.get("model", "gemini")  # default to gemini if not specified
+        
+        if model_type not in ["gemini", "nutrix"]:
+            return jsonify({
+                "success": False,
+                "error": "Model tidak valid. Gunakan 'gemini' atau 'nutrix'."
+            }), 400
+
         # Handle image file
         if "image" in request.files:
             image_file = request.files["image"]
-            # Read and encode image
             image_bytes = image_file.read()
             image_base64 = base64.b64encode(image_bytes).decode("utf-8")
             
-            # Generate content with image - using incorrect format to trigger natural error
-            response = model.generate_content([
-                create_food_analysis_prompt(is_image=True),
-                {
-                    "inlineData": {
-                        "data": image_base64,
-                        "mimeType": image_file.content_type
-                    }
-                }
-            ])
+            # Prepare image data
+            image_data = {
+                "mime_type": image_file.content_type,
+                "data": image_base64
+            }
+            
+            # Get prompt for image
+            prompt = create_food_analysis_prompt(is_image=True)
+            
+            # Analyze with selected model
+            if model_type == "gemini":
+                result = analyze_with_gemini(prompt, image_data)
+            else:  # nutrix
+                result = analyze_with_nutrix(prompt, image_data)
 
         # Handle text input
         elif "text" in request.form:
             text = request.form["text"]
-            # Generate content with text
-            response = model.generate_content(
-                contents=[
-                    {
-                        "parts": [
-                            {"text": create_food_analysis_prompt(text, is_image=False)}
-                        ]
-                    }
-                ]
-            )
+            
+            # Get prompt for text
+            prompt = create_food_analysis_prompt(text, is_image=False)
+            
+            # Analyze with selected model
+            if model_type == "gemini":
+                result = analyze_with_gemini(prompt)
+            else:  # nutrix
+                result = analyze_with_nutrix(prompt)
         else:
             return jsonify({
                 "success": False,
                 "error": "Mohon masukkan gambar atau teks untuk dianalisis"
             }), 400
 
-        # Get response text
-        response_text = response.text
-        if not response_text:
-            raise ValueError("Tidak ada respons dari AI")
+        if not result:
+            raise ValueError("Tidak ada respons dari model")
 
         return jsonify({
             "success": True,
-            "data": {"content": response_text}
+            "data": {"content": result}
         })
 
     except Exception as e:

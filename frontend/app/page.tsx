@@ -12,6 +12,9 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedModel, setSelectedModel] = useState<"gemini" | "nutrix">(
+    "gemini"
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Handler untuk menghapus pesan
@@ -43,11 +46,15 @@ export default function Home() {
       if (!input) return;
 
       // Persiapkan payload
-      let payload: { text?: string; image?: File } = {};
+      let payload: { text?: string; image?: File; model: "gemini" | "nutrix" } =
+        {
+          model: selectedModel,
+        };
+
       if (type === "image" && input instanceof File) {
-        payload = { image: input };
+        payload = { ...payload, image: input };
       } else if (type === "text" && typeof input === "string") {
-        payload = { text: input };
+        payload = { ...payload, text: input };
       } else {
         throw new Error("Invalid input type");
       }
@@ -72,6 +79,7 @@ export default function Home() {
       } else if (payload.text) {
         formData.append("text", payload.text);
       }
+      formData.append("model", payload.model);
 
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -128,8 +136,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-[100dvh] ">
-      <Header />
+    <div className="flex flex-col min-h-[100dvh]">
+      <Header selectedModel={selectedModel} onModelChange={setSelectedModel} />
 
       {/* Area Pesan */}
       <main
@@ -150,13 +158,13 @@ export default function Home() {
           )}
           {loading && (
             <div className="flex gap-2 items-center text-gray-500 animate-pulse">
-              <div className="w-2 h-2  bg-primary rounded-full animate-bounce" />
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
               <div
-                className="w-2 h-2  bg-primary rounded-full animate-bounce"
+                className="w-2 h-2 bg-primary rounded-full animate-bounce"
                 style={{ animationDelay: "150ms" }}
               />
               <div
-                className="w-2 h-2  bg-primary rounded-full animate-bounce"
+                className="w-2 h-2 bg-primary rounded-full animate-bounce"
                 style={{ animationDelay: "300ms" }}
               />
             </div>
@@ -165,7 +173,7 @@ export default function Home() {
       </main>
 
       {/* Area Input */}
-      <div className="fixed bottom-0 left-0 right-0  pt-4">
+      <div className="fixed bottom-0 left-0 right-0 pt-4">
         <div className="max-w-3xl mx-auto px-4 bg-background">
           <InputArea
             selectedImage={selectedImage}
