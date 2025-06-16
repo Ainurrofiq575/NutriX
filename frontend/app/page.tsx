@@ -1,3 +1,12 @@
+/**
+ * Nutrix AI Web Application
+ * ------------------------
+ * Aplikasi web untuk analisis nutrisi makanan menggunakan AI.
+ * Mendukung input teks dan gambar, dengan dua model AI:
+ * - Gemini: Model AI dari Google untuk analisis umum
+ * - Nutrix: Model khusus untuk analisis nutrisi dari database
+ */
+
 "use client";
 
 import { useState, useRef } from "react";
@@ -7,22 +16,28 @@ import { MessageCard, type Message } from "@/components/MessageCard";
 import { InputArea } from "@/components/InputArea";
 
 export default function Home() {
-  // State management
-  const [loading, setLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  // State Management
+  const [loading, setLoading] = useState(false); // Status loading saat request
+  const [selectedImage, setSelectedImage] = useState<string | null>(null); // Preview gambar yang dipilih
+  const [imageFile, setImageFile] = useState<File | null>(null); // File gambar untuk upload
+  const [messages, setMessages] = useState<Message[]>([]); // Riwayat chat/pesan
   const [selectedModel, setSelectedModel] = useState<"gemini" | "nutrix">(
     "gemini"
-  );
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  ); // Model AI yang dipilih
+  const messagesEndRef = useRef<HTMLDivElement>(null); // Ref untuk auto-scroll
 
-  // Handler untuk menghapus pesan
+  /**
+   * Menghapus pesan dari riwayat chat
+   * @param id ID pesan yang akan dihapus
+   */
   const handleDelete = (id: string) => {
     setMessages(messages.filter((message) => message.id !== id));
   };
 
-  // Handler untuk menambahkan pesan error
+  /**
+   * Menambahkan pesan error ke riwayat chat
+   * @param error Pesan error yang akan ditampilkan
+   */
   const addErrorMessage = (error: string) => {
     setMessages((prev) => [
       ...prev,
@@ -39,18 +54,25 @@ export default function Home() {
     ]);
   };
 
-  // Fungsi utama untuk analisis makanan
+  /**
+   * Fungsi utama untuk menganalisis makanan
+   * Mengirim request ke API dan menangani respons
+   *
+   * @param type Tipe input ('text' atau 'image')
+   * @param input Data input (string untuk teks, File untuk gambar)
+   */
   const analyzeFood = async (type: "text" | "image", input: string | File) => {
     try {
       setLoading(true);
       if (!input) return;
 
-      // Persiapkan payload
+      // Persiapkan data untuk dikirim ke API
       let payload: { text?: string; image?: File; model: "gemini" | "nutrix" } =
         {
           model: selectedModel,
         };
 
+      // Set payload berdasarkan tipe input
       if (type === "image" && input instanceof File) {
         payload = { ...payload, image: input };
       } else if (type === "text" && typeof input === "string") {
@@ -59,7 +81,7 @@ export default function Home() {
         throw new Error("Invalid input type");
       }
 
-      // Tambahkan pesan user
+      // Tambahkan pesan user ke riwayat
       const newMessage: Message = {
         id: Date.now().toString(),
         type,
@@ -68,7 +90,7 @@ export default function Home() {
       };
       setMessages((prev) => [...prev, newMessage]);
 
-      // Reset input
+      // Reset input setelah submit
       setSelectedImage(null);
       setImageFile(null);
 
@@ -81,6 +103,7 @@ export default function Home() {
       }
       formData.append("model", payload.model);
 
+      // Proses response dari API
       const response = await fetch("/api/analyze", {
         method: "POST",
         body: formData,
@@ -88,6 +111,7 @@ export default function Home() {
 
       const data = await response.json();
       if (data.success) {
+        // Tambahkan respons AI ke riwayat
         setMessages((prev) => [
           ...prev,
           {
@@ -109,12 +133,18 @@ export default function Home() {
     }
   };
 
-  // Handlers untuk input gambar
+  /**
+   * Handler untuk upload gambar via input file
+   */
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleImageFile(file);
   };
 
+  /**
+   * Handler untuk memproses file gambar
+   * Mendukung upload, drag & drop, dan paste
+   */
   const handleImageFile = (file: File) => {
     if (file.type.startsWith("image/")) {
       setImageFile(file);
@@ -126,7 +156,10 @@ export default function Home() {
     }
   };
 
-  // Handler untuk form submission
+  /**
+   * Handler untuk submit form
+   * Menentukan tipe input dan memanggil analyzeFood
+   */
   const handleSubmit = (text: string) => {
     if (imageFile) {
       analyzeFood("image", imageFile);
@@ -137,14 +170,16 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-[100dvh]">
+      {/* Header dengan Model Selector */}
       <Header selectedModel={selectedModel} onModelChange={setSelectedModel} />
 
-      {/* Area Pesan */}
+      {/* Area Chat/Pesan */}
       <main
         className="flex-1 overflow-y-auto overflow-x-hidden pb-[100px] md:pb-[120px]"
         ref={messagesEndRef}
       >
         <div className="max-w-3xl mx-auto p-4 space-y-4">
+          {/* Tampilkan EmptyState jika belum ada pesan */}
           {messages.length === 0 ? (
             <EmptyState />
           ) : (
@@ -156,6 +191,8 @@ export default function Home() {
               />
             ))
           )}
+
+          {/* Loading indicator */}
           {loading && (
             <div className="flex gap-2 items-center text-gray-500 animate-pulse">
               <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
