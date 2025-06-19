@@ -172,7 +172,7 @@ export default function Home() {
     <div className="flex flex-col min-h-[100dvh]">
       {/* Header dengan Model Selector */}
       <Header selectedModel={selectedModel} onModelChange={setSelectedModel} />
-
+        
       {/* Area Chat/Pesan */}
       <main
         className="flex-1 overflow-y-auto overflow-x-hidden pb-[100px] md:pb-[120px]"
