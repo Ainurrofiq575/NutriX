@@ -8,8 +8,8 @@ Mendukung dua model AI:
 
 Flow:
 1. Terima request dari frontend (gambar/teks)
-2. Tentukan model yang digunakan (gemini/nutrix)
-3. Proses input dan kirim ke model yang sesuai
+2. Jika gambar, gunakan Gemini untuk deteksi nama makanan
+3. Gunakan Nutrix untuk analisis nutrisi
 4. Kembalikan hasil analisis ke frontend
 """
 
@@ -17,7 +17,7 @@ import base64
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from model.prompts import create_food_analysis_prompt
-from model.gemini.main import analyze_with_gemini
+from model.gemini.main import analyze_with_gemini, detect_food_from_image
 from model.nutrix.main import analyze_with_nutrix
 
 # Inisialisasi Flask app dengan CORS
@@ -39,7 +39,7 @@ def analyze():
     """
     try:
         # Validasi model yang dipilih
-        model_type = request.form.get("model", "gemini")
+        model_type = request.form.get("model", "nutrix")
         if model_type not in ["gemini", "nutrix"]:
             return jsonify({
                 "success": False,
@@ -54,18 +54,20 @@ def analyze():
             image_base64 = base64.b64encode(image_bytes).decode("utf-8")
             
             # Siapkan data gambar untuk model
-            image_data = {
-                "mime_type": image_file.content_type,
-                "data": image_base64
-            }
+            image_data = f"data:{image_file.content_type};base64,{image_base64}"
             
             # Untuk gambar, gunakan prompt khusus analisis gambar
             prompt = create_food_analysis_prompt(is_image=True)
             
             # Analisis dengan model yang dipilih
             if model_type == "gemini":
-                result = analyze_with_gemini(prompt, image_data)
-            else:  # nutrix
+                # Format data untuk Gemini
+                gemini_image_data = {
+                    "mime_type": image_file.content_type,
+                    "data": image_base64
+                }
+                result = analyze_with_gemini(prompt, gemini_image_data)
+            else:  # nutrix 
                 result = analyze_with_nutrix(prompt, image_data)
 
         # Proses input teks
@@ -99,7 +101,7 @@ def analyze():
         print(f"Error: {str(e)}")
         return jsonify({
             "success": False,
-            "error": "Terjadi kesalahan pada server"
+            "error": f"Terjadi kesalahan pada server: {str(e)}"
         }), 500
 
 if __name__ == "__main__":

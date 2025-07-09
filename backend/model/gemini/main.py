@@ -14,9 +14,18 @@ import os
 import base64
 import google.generativeai as genai
 from dotenv import load_dotenv
+from PIL import Image
+import io
 
-# Load environment variables untuk API key
+# Load environment variables
 load_dotenv()
+
+# Configure Gemini API with the correct environment variable
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY not found in environment variables")
+
+genai.configure(api_key=GEMINI_API_KEY)
 
 def init_gemini():
     """
@@ -94,4 +103,44 @@ def analyze_with_gemini(prompt: str, image_data: dict = None):
         return response.text if response.text else None
     except Exception as e:
         print(f"Gemini Error: {str(e)}")
+        raise
+
+def detect_food_from_image(image_data: str) -> str:
+    """
+    Detect food from base64 encoded image using Gemini 
+    Returns only the food name in English
+    
+    Args:
+        image_data: Base64 encoded image string
+    
+    Returns:
+        str: Detected food name (e.g. "chicken", "rice", "egg")
+    """
+    try:
+        # Decode base64 image
+        image_bytes = base64.b64decode(image_data.split(',')[1])
+        image = Image.open(io.BytesIO(image_bytes))
+        
+        # Initialize Gemini model
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        
+        # Create prompt for food detection
+        prompt = """You are a food detection AI. Look at this image and tell me what food item it is.
+        Return ONLY the food name in English, single word if possible. For example:
+        - "chicken" for chicken dishes
+        - "rice" for rice dishes
+        - "noodles" for noodle dishes
+        DO NOT include any descriptions or additional text."""
+        
+        # Generate response
+        response = model.generate_content([prompt, image])
+        
+        # Clean and return the food name
+        food_name = response.text.strip().lower()
+        food_name = food_name.replace('"', '').replace("'", "")
+        
+        return food_name
+        
+    except Exception as e:
+        print(f"Error detecting food: {str(e)}")
         raise

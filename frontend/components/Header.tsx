@@ -1,16 +1,16 @@
 import { ToggleMode } from "./toggle-mode";
 import { ModelSelect } from "./model-select";
+import { ReactNode } from "react";
 
 interface HeaderProps {
-  selectedModel: "gemini" | "nutrix";
-  onModelChange: (model: "gemini" | "nutrix") => void;
+  children?: ReactNode;
 }
 
 /**
  * Header Component
  * Fixed header displaying the app name with a blur effect background
  */
-export const Header = ({ selectedModel, onModelChange }: HeaderProps) => (
+export const Header = ({ children }: HeaderProps) => (
   <header className="sticky top-0 z-50">
     <div className="max-w-3xl mx-auto flex flex-col gap-2 p-4">
       <div className="flex items-center justify-between">
@@ -18,10 +18,7 @@ export const Header = ({ selectedModel, onModelChange }: HeaderProps) => (
           Nutrix AI
         </h1>
         <div className="flex items-center gap-2">
-          <ModelSelect
-            selectedModel={selectedModel}
-            onModelChange={onModelChange}
-          />
+          {children}
           <ToggleMode />
         </div>
       </div>

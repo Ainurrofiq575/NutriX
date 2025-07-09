@@ -21,22 +21,20 @@ interface MessageCardProps {
   onDelete: (id: string) => void;
 }
 
-
 // Komponen untuk menampilkan pesan dalam chat
 export const MessageCard = ({ message, onDelete }: MessageCardProps) => {
   const [isCopied, setIsCopied] = useState(false);
+
   // Handler untuk menyalin teks ke clipboard
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.write([
-      new ClipboardItem({
-        "text/plain": new Blob([text], { type: "text/plain" }),
-      }),
-    ]);
-    setIsCopied(true);
-    setTimeout(() => {
-      setIsCopied(false);
-    }, 2000);
-    };
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+  };
 
   // Render pesan dari user
   if (message.sender === "user") {
@@ -65,10 +63,10 @@ export const MessageCard = ({ message, onDelete }: MessageCardProps) => {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 "
+              className="h-6 w-6"
               onClick={() => onDelete(message.id)}
             >
-              <Trash2 className="h-3 w-3 " />
+              <Trash2 className="h-3 w-3" />
             </Button>
           </div>
         </div>
@@ -93,53 +91,47 @@ export const MessageCard = ({ message, onDelete }: MessageCardProps) => {
         )}
       </div>
       <div className="flex-1 space-y-2">
-        <div className="prose prose-sm md:prose-base max-w-none">
-          <ReactMarkdown
-            components={{
-              h1: ({ ...props }) => (
-                <h1 className="text-xl font-bold mb-2" {...props} />
-              ),
-              h2: ({ ...props }) => (
-                <h2 className="text-lg font-semibold mt-4 mb-2" {...props} />
-              ),
-              p: ({ ...props }) => (
-                <p className="mb-2 text-sm md:text-base" {...props} />
-              ),
-              ul: ({ ...props }) => (
-                <ul className="list-disc pl-4 space-y-1 mb-2" {...props} />
-              ),
-              li: ({ ...props }) => (
-                <li className="text-sm md:text-base" {...props} />
-              ),
-            }}
-          >
-            {message.result?.content || ""}
-          </ReactMarkdown>
+        <div className="prose prose-sm md:prose-base max-w-none dark:prose-invert">
+          {message.result?.content ? (
+            message.result.content.startsWith('Error:') ? (
+              <p className="text-sm text-destructive">{message.result.content}</p>
+            ) : (
+              <div className="whitespace-pre-wrap text-sm md:text-base">
+                {message.result.content.split('\n').map((line, index) => (
+                  <p key={index} className="mb-1">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            )
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {message.error ? "Error analyzing food" : "Analyzing food..."}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
-          {!message.error && (
+          {!message.error && message.result?.content && !message.result.content.startsWith('Error:') && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 hover:text"
-              onClick={() =>
-                message.result && copyToClipboard(message.result.content)
-              }
+              className="h-6 w-6"
+              onClick={() => message.result?.content && copyToClipboard(message.result.content)}
             >
               {isCopied ? (
-                <Check className="h-3 w-3 " />
+                <Check className="h-3 w-3" />
               ) : (
-                <Copy className="h-3 w-3 " />
+                <Copy className="h-3 w-3" />
               )}
             </Button>
           )}
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 "
+            className="h-6 w-6"
             onClick={() => onDelete(message.id)}
           >
-            <Trash2 className="h-3 w-3 " />
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       </div>
