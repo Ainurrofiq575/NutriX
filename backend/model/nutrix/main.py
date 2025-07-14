@@ -460,6 +460,7 @@ Informasi Nutrisi (per 100g):"""
         print(f"Error saat memformat respons: {e}")
         return f"Error: Tidak dapat memformat data nutrisi untuk {clean_name}"
 
+# konfigurasi gambar di model nutrix
 def analyze_with_nutrix(prompt: str, image_data: dict = None) -> str:
     """
     Analisis makanan menggunakan model Nutrix
@@ -505,10 +506,10 @@ def get_nutrition():
         POST request dengan JSON body berisi 'food_name' dan/atau 'image_data'
     
     Returns:
-        JSON response dengan data nutrisi atau error
+        JSON response dengan data nutrisi atau error 
     """
     try:
-        data = request.get_json()
+        data = request.get_json()   # Ambil data dari user/terima data dari frontend
         if data is None:
             return jsonify({'success': False, 'error': 'Invalid JSON data'}), 400
             
@@ -519,7 +520,7 @@ def get_nutrition():
             return jsonify({'success': False, 'error': 'Nama makanan atau gambar harus diisi'}), 400
         
         try:
-            result = analyze_with_nutrix(food_name, image_data)
+            result = analyze_with_nutrix(food_name, image_data) # Analisis makanan dengan model Nutrix dan teruskan
             return jsonify({'success': True, 'data': result})
         except Exception as e:
             print(f"Error in analyze_with_nutrix: {str(e)}")

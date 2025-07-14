@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000";
 
+// frontend/app/api/nutrition/route.ts (route untuk backend)
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
+    const data = await req.json();                       // Ambil data dari user
     const { food_name, image_data, model } = data;
 
     // Validate backend connection first
     try {
-      // Create FormData for the request
+      // Create FormData for the request(membuat formdata yang akan dikirim ke backend)
       const formData = new FormData();
       formData.append('model', model || 'nutrix');
       
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
         formData.append('text', food_name);
       }
 
+      // konfigurasi request ke backend dengan api/analyze (Kirim ke backend)
       const response = await fetch(`${BACKEND_URL}/api/analyze`, {
         method: "POST",
         body: formData,
@@ -50,7 +52,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Format the response data
+      // Memformat data response untuk frontend
       let content = '';
       if (typeof result.data === 'string') {
         content = result.data;
